@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+*.sqlite3
+db.sqlite3-journal
+tmp
+
+*.cfg
+*.json
