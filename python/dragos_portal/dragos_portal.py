@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import requests
 import urllib3
+from .ratelimiter import RateLimiter
 
 class DragosPortalAPI:
     def __init__(self, config_filename):
@@ -33,12 +34,15 @@ class DragosPortalAPI:
         except:
             raise('error reading Dragos config')
 
+    @RateLimiter
+    def get(self, url, **kwargs):
+        return requests.get(url, headers=self.headers, verify=self.ssl_verify)
 
     def get_intel_report_pdf(self, url, **kwargs):
         if kwargs['debug']:
             print('Fetching %s' % url)
 
-        request = requests.get(url, headers = self.headers, verify=self.ssl_verify)
+        request = self.get(url)
 
         if request.status_code == 200:
             base_path = './'
@@ -55,7 +59,6 @@ class DragosPortalAPI:
         else:
             print('Could not fetch %s' % url)
 
-
     def get_intel_reports_page(self, page=1, **kwargs):
         url = self.url + 'products?page_size=500'
         if kwargs['updated_after']:
@@ -64,13 +67,12 @@ class DragosPortalAPI:
         if kwargs['debug']:
             print('Fetching %s' % url)
 
-        response = requests.get(url + '&page=%i' % page, headers=self.headers, verify=self.ssl_verify)
+        response = self.get(f'{url}&page={page}')
 
         if response.status_code == 200:
             return response.json()
         else:
             raise response.body
-
 
     def get_intel_reports(self, **kwargs):
         reports = []
@@ -85,7 +87,6 @@ class DragosPortalAPI:
 
         return reports
 
-
     def get_indicators_page(self, page=1, **kwargs):
         url = self.url + 'indicators?page_size=1000'
         if kwargs['updated_after']:
@@ -94,13 +95,12 @@ class DragosPortalAPI:
         if kwargs['debug']:
             print('Fetching %s' % url)
 
-        response = requests.get(url + '&page=%i' % page, headers=self.headers, verify=self.ssl_verify)
+        response = self.get(f'{url}&page={page}')
 
         if response.status_code == 200:
             return response.json()
         else:
             raise response.body
-
 
     def get_indicators(self, **kwargs):
         indicators = []
