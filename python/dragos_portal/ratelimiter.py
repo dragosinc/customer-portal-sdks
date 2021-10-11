@@ -21,8 +21,6 @@ class RateLimiter:
 
     def __call__(self, *args, **kwargs):
         self.rate_limit()
-        print(f'INFO: {self.requests_in_last_minute} / {self.MAX_REQUESTS_PER_MINUTE} requests made in last minute')
-        print(f'INFO: {self.requests_in_last_week} / {self.MAX_REQUESTS_PER_WEEK} requests made in last week')
         return self.func(*args, **kwargs)
 
     def __get__(self, instance, _owner):
