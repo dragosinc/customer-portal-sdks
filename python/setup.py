@@ -6,9 +6,6 @@ from setuptools import setup, find_packages
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('LICENSE') as license_file:
-    license = license_file.read()
-
 requirements = [
     "requests"
 ]
@@ -21,13 +18,13 @@ setup(
     version='0.1.0',
     description="A simple Python wrapper client for the Dragos portal API",
     long_description=readme,
+    long_description_content_type='text/markdown',
     author="Dragos, Inc.",
     author_email="",
     url='https://github.com/dragosinc/dragos-portal-python',
     packages=find_packages(exclude=('tests', 'docs')),
     include_package_data=True,
     install_requires=requirements,
-    license=license,
     zip_safe=True,
     keywords='dragos',
     classifiers=[
