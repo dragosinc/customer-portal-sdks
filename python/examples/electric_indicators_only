@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+"""
+An example for using the python SDK that includes recommendations for local caching
+
+This script should be used as an example and modified to export the indicators to any SIEM or TIP as needed.
+Dragos recommends a run frequency of once every 6 hours, using a random minute to prevent API rate limiting.
+API rate limit information is available on the User Profile page of portal.dragos.com in the same section
+where API credentials can be found. Please contact support@dragos.com (and include Customer Portal in the subject)
+with any questions or feedback.
+"""
+
+import argparse
+import json
+import os
+from pathlib import Path
+import sys
+import datetime
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from dragos_portal import DragosPortalAPI
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-c', '--api-config', help='config file with Dragos API credentials and options', default='dragos.cfg')
+parser.add_argument('-s', '--save-dir', help='path to directory to save outputs', default='.')
+parser.add_argument('-a', '--age', help='age of indicators, in days', type=int, action="store", default=90)
+parser.add_argument('-d', '--debug', help='print debugging information', action='store_true', default=False)
+args = parser.parse_args()
+
+TYPES_FILTER = ["Industry", "NAICS"]
+TEXT_FILTER = "Electric"
+PARTITION = 80
+
+now = datetime.datetime.now()
+portalclient = DragosPortalAPI(args.api_config)
+
+if args.debug:
+    print(f"Filtering reports on tags types {TYPES_FILTER}")
+
+reports = portalclient.get_intel_reports(updated_after=(now - datetime.timedelta(days=args.age)), debug=args.debug)
+filtered_reports = []
+for r in reports:
+    if r['serial'].startswith("DOM"):
+        continue
+
+    for t in r['tags']:
+        if t['tag_type'] in TYPES_FILTER and t['text'].startswith(TEXT_FILTER):
+            filtered_reports.append(r['serial'])
+
+if args.debug:
+    print(f"Total filtered reports: {len(filtered_reports)}")
+
+indicators = []
+for n in range((len(filtered_reports) // PARTITION) + 1):
+    response = portalclient.get_indicators(serials=filtered_reports[(n*PARTITION):((n*PARTITION)+PARTITION)], debug=args.debug)
+    indicators = indicators + response
+
+# --save-dir will dump the indicator payload to a file with an EPOCH timestamp
+path = "."
+if args.save_dir:
+    path = Path(str(args.save_dir))
+filename = f"{path}/dragos_indicators_{datetime.datetime.utcnow().timestamp()}.json"
+if args.debug:
+    print(f"Saving {len(indicators)} indicators to {filename}")
+with open(filename, 'w') as f:
+    json.dump(indicators, f)
