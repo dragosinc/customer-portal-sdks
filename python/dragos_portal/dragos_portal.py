@@ -92,6 +92,10 @@ class DragosPortalAPI:
         if kwargs['updated_after']:
             url += '&updated_after=%s' % kwargs['updated_after']
 
+        if "serials" in kwargs:
+            for serial in kwargs['serials']:
+                url += f"&serial%5B%5D={serial}"    
+            
         if kwargs['debug']:
             print('Fetching %s' % url)
 
